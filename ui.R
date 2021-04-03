@@ -57,6 +57,8 @@ shinyUI(
                    checkboxGroupInput(inputId = "mapFilter", "Map type",
                                       choices = c("koth","cp","pl","ultiduo"), selected = c("koth","cp","pl","ultiduo"), inline = TRUE),
                    
+                   # checkboxGroupInput(inputId = "regionFilter", "Region",
+                                      # choices = c("NA","EU","SEA","other/unknown" = "unknown"), selected = c("NA","EU","SEA","other/unknown"), inline = TRUE),
                    
                    width = 3
                  ),

@@ -20,10 +20,10 @@ shinyServer(
     observeEvent(input$sessionsPerMonth, {
       sessionsByMonthTable <- matchesTable
       sessionsByMonthTable$month <- as.Date(cut(sessionsByMonthTable$date, breaks = "month"))
-      sessionsByMonthTable <- sessionsByMonthTable %>% group_by(month) %>% summarize(sessions = n_distinct(date))
+      sessionsByMonthTable <- sessionsByMonthTable %>% group_by(month,region) %>% summarize(sessions = n_distinct(date))
       sessionsByMonthTable$month <- format(as.Date(sessionsByMonthTable$month), '%Y %m')
       
-      mainPlot <- ggplot(data = sessionsByMonthTable, aes(month,sessions)) + geom_bar(stat = "identity") + 
+      mainPlot <- ggplot(data = sessionsByMonthTable, aes(x = month, y = sessions, fill = region)) + geom_bar(stat = "identity", position = 'stack') + 
         ggtitle("Number of PUG sessions per month") + theme_minimal()
       
       output$mainPlot <- renderPlot(mainPlot)
@@ -33,11 +33,13 @@ shinyServer(
     observeEvent(input$matchTypes, {
       matchtypeByMonthTable <- matchesTable
       matchtypeByMonthTable$month <- as.Date(cut(matchtypeByMonthTable$date, breaks = "month"))
-      matchtypeByMonthTable <- matchtypeByMonthTable %>% mutate(map2 = str_replace(map, 'koth_ultiduo', 'ultiduo_ultiduo')) %>% mutate(matchType = str_replace(map2, '[_].+', '')) %>% group_by(month) %>% select(month,matchType)
+      matchtypeByMonthTable <- matchtypeByMonthTable %>% mutate(map2 = str_replace(map, 'koth_ultiduo', 'ultiduo_ultiduo')) %>% mutate(matchType = str_replace(map2, '[_].+', '')) %>% 
+        group_by(month,region) %>% select(month,matchType,region)
+      matchtypeByMonthTable$month <- format(as.Date(matchtypeByMonthTable$month), '%Y %m')
       
-      matchtypeByMonthTable2 <- matchesTable %>% select(logsID,date,map) %>% arrange(desc(logsID))
+      matchtypeByMonthTable2 <- matchesTable %>% select(logsID,region,date,map) %>% arrange(desc(logsID))
       
-      mainPlot <- ggplot(data = matchtypeByMonthTable, aes(x = month, fill = matchType)) + geom_bar(stat = 'count') +
+      mainPlot <- ggplot(data = matchtypeByMonthTable, aes(x = month, fill = matchType)) + geom_bar(stat = 'count', position = 'stack') +
         ggtitle("Matches by type per month") + theme_minimal()
       
       output$mainPlot <- renderPlot(mainPlot)
@@ -73,7 +75,8 @@ shinyServer(
     })
     
     observeEvent(input$mapTime, {
-      mapTimeTable <- matchesTable %>% select(map, length) %>% transmute(map = str_replace(map, 'pro_viaduct', 'product'), length = length) %>% transmute(map = str_replace(map, '([a-z]+_[a-z]+)_.+', '\\1'), lengthMin = round(length/60, digits=1)) %>%
+      mapTimeTable <- matchesTable %>% select(map, length) %>% transmute(map = str_replace(map, 'pro_viaduct', 'product'), length = length) %>%
+        transmute(map = str_replace(map, '([a-z]+_[a-z]+)_.+', '\\1'), lengthMin = round(length/60, digits=1)) %>%
         group_by(map) %>% summarize(totalTime = sum(lengthMin)) %>% arrange(desc(totalTime))
       
       mainPlot <- ggplot(data = mapTimeTable, aes(map,totalTime)) + geom_bar(stat = 'identity') + coord_flip() + ggtitle("Total time spent per map (min)") + theme_minimal()
@@ -137,7 +140,7 @@ shinyServer(
         playerRankings <- playerRankings %>% filter(class == "medic") %>% select(steamID,total_time,med_healing,med_charges,med_drops) %>% group_by(steamID) %>%
           summarize(time_played = sum(total_time), total_healing = sum(med_healing), hpm = round(sum(med_healing)/sum(total_time)*60)) %>%
           inner_join(playerTable, by='steamID') %>%
-          select(steamName,time_played,total_healing,hpm) %>% arrange(desc(hpm))
+          select(steamName,time_played,total_healing,hpm) %>% arrange(desc(total_healing))
       }
       
       output$rankingTable <- renderDataTable(playerRankings, options = list(pageLength = 50))
