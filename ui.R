@@ -5,7 +5,8 @@ library(tidyverse)
 library(ggplot2)
 library(bit64)
 
-playerTable <- as.data.frame(fread('https://raw.githubusercontent.com/shelchang/tf2cc-data/main/persons.csv')) %>% select(steamID, steamName) %>% arrange(steamName)
+playerTable <- as.data.frame(fread('https://raw.githubusercontent.com/shelchang/tf2cc-data/main/persons.csv')) %>% select(steamID, steamName, discord) %>%
+  mutate(alias = case_when(discord == '' ~ steamName, discord != '' ~ discord)) %>% select(steamID, alias) %>% rename(steamName = alias) %>% arrange(steamName)
 
 shinyUI(
   fluidPage(

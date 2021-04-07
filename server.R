@@ -7,7 +7,8 @@ library(bit64)
 
 shinyServer(
   function(input, output) {
-    playerTable <- as.data.frame(fread('https://raw.githubusercontent.com/shelchang/tf2cc-data/main/persons.csv')) %>% select(steamID, steamName) %>% arrange(steamName)
+    playerTable <- as.data.frame(fread('https://raw.githubusercontent.com/shelchang/tf2cc-data/main/persons.csv')) %>% select(steamID, steamName, discord) %>%
+      mutate(alias = case_when(discord == '' ~ steamName, discord != '' ~ discord)) %>% select(steamID, alias) %>% rename(steamName = alias) %>% arrange(steamName)
     matchesTable <- as.data.frame(fread('https://raw.githubusercontent.com/shelchang/tf2cc-data/main/matches.csv'))
     matchesTable$date <- as.Date(matchesTable$date)
     resultsTable <- as.data.frame(fread('https://raw.githubusercontent.com/shelchang/tf2cc-data/main/results.csv'))
